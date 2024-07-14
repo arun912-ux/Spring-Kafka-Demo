@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: SpringKafka
+
+
+
+
+# spring cloud stream config
+#  cloud:
+#    stream:
+#      kafka:
+#        binder:
+#          brokers: 192.168.122.157:9092
+#
+
+
+
+# spring kafka config
+  kafka:
+    bootstrap-servers: "192.168.122.157:9092"
+
+    producer:
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      client-id: spring-kafka-producer-client
+
+    consumer:
+      client-id: spring-kafka-consumer-client
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      group-id: spring-kafka-consumer-group
+
+
+
+
+
+
+
+
+#logging:
+#  level:
+#    root: debug
+
+
+
+
+
+
+
+
