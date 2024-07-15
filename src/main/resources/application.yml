@@ -30,7 +30,8 @@ spring:
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       group-id: spring-kafka-consumer-group
 
-
+    listener:
+      log-container-config: true
 
 
 
@@ -43,6 +44,17 @@ spring:
 
 
 
+server:
+  servlet:
+    context-path: /v1/kafka
+
+
+logging:
+  file:
+    name: /tmp/spring/${spring.application.name}.log
+
+  level:
+    file: debug
 
 
 
