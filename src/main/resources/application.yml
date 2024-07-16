@@ -6,33 +6,60 @@ spring:
 
 
 # spring cloud stream config
-#  cloud:
-#    stream:
-#      kafka:
-#        binder:
-#          brokers: 192.168.122.157:9092
+  cloud:
+    stream:
+
+      bindings:
+        streamProcess-in-0:
+          destination: streams-topic-input
+          group: spring-kafka-consumer-group
+
+        streamProcess-out-0:
+          destination: streams-topic-output
+
+      kafka:
+        binder:
+          transaction:
+            producer:
+              use-native-encoding: true
+
+
+#        stringSupplier-out-0:
+#          destination: test-topic
 #
+#        stringConsumer-in-0:
+#          destination: input-topic
+
+
+    function:
+#      definition: stringSupplier,stringConsumer
+      definition: streamProcess
 
 
 
-# spring kafka config
+
+
+
+
+#
+#  # spring kafka config
   kafka:
     bootstrap-servers: "192.168.122.157:9092"
-
     producer:
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      client-id: spring-kafka-producer-client
+      acks: all
 
-    consumer:
-      client-id: spring-kafka-consumer-client
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      group-id: spring-kafka-consumer-group
+#      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      client-id: spring-kafka-producer-client
+#
+#    consumer:
+#      client-id: spring-kafka-consumer-client
+#      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#      group-id: spring-kafka-consumer-group-1
 
     listener:
       log-container-config: true
-
 
 
 
