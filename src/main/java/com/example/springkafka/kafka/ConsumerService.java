@@ -7,6 +7,7 @@
 //import lombok.extern.slf4j.Slf4j;
 //import org.apache.kafka.clients.consumer.ConsumerRecord;
 //import org.springframework.kafka.annotation.KafkaListener;
+//import org.springframework.kafka.annotation.RetryableTopic;
 //import org.springframework.stereotype.Service;
 //
 //@Service
@@ -18,6 +19,7 @@
 //    private final ObjectMapper mapper;
 //    private static final String INPUT_TOPIC = "input-topic";
 //
+//    @RetryableTopic(attempts = "5")
 //    @KafkaListener(topics = {INPUT_TOPIC}, groupId = "arbitrary-group-id")
 //    public void consumeMessage(String message) throws JsonProcessingException {
 //        // convert string to json with 4 indent

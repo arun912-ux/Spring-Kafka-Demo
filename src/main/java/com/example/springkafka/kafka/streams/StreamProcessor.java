@@ -4,7 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.stream.annotation.StreamRetryTemplate;
 import org.springframework.context.annotation.Bean;
+import org.springframework.retry.support.RetryTemplate;
+import org.springframework.retry.support.RetryTemplateBuilder;
 import org.springframework.stereotype.Service;
 
 import java.util.function.Consumer;
@@ -21,6 +24,8 @@ public class StreamProcessor {
         this.mapper = mapper;
     }
 
+
+
     @Bean("streamProcess")
     public Function<String, String> streamProcess() {
         log.info("************************* inside streamProcess method.***********************************");
@@ -30,6 +35,7 @@ public class StreamProcessor {
                 input = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
             } catch (JsonProcessingException e) {
                 log.error("Input message is not valid json: {}. \nYet processing as String ", input);
+                throw new RuntimeException(e);
             }
             input = input.toUpperCase();
             log.info("streamProcess : {}", input);
@@ -38,9 +44,42 @@ public class StreamProcessor {
     }
 
 
+    @Bean("errorHandler")
+    public Function<String, String> errorHandler() {
+        log.info("************************* inside errorHandler method.***********************************");
+        return (error) -> {
+            log.info("errorHandler : {}", error);
+//            try {
+//                log.info("errorHandler : {}", mapper.writerWithDefaultPrettyPrinter().writeValueAsString(mapper.readTree(error)));
+//            } catch (JsonProcessingException e) {
+//                throw new RuntimeException(e);
+//            }
+            return error;
+        };
+    }
 
 
+//    @Bean
+//    public DlqDestinationResolver dlqDestinationResolver() {
+//        return (rec, ex) -> {
+//            if (ex.getMessage().contains("com.fasterxml.jackson.core.io.JsonEOFException")) {
+//                return "streams-topic-error";
+//            }
+//            else {
+//                return "topic2-dlq";
+//            }
+//        };
+//    }
 
+
+    @Bean("retryTemplate")
+    @StreamRetryTemplate
+    public RetryTemplate retryTemplate() {
+        return new RetryTemplateBuilder()
+                .maxAttempts(3)
+                .exponentialBackoff(2000, 2, 30_000)
+                .build();
+    }
 
 
 //    @Bean("stringConsumer")

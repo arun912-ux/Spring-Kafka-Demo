@@ -13,15 +13,48 @@ spring:
         streamProcess-in-0:
           destination: streams-topic-input
           group: spring-kafka-consumer-group
+          error-handler-definition: errorHandler
+          consumer:
+            retry-template-name: retryTemplate
+
 
         streamProcess-out-0:
           destination: streams-topic-output
+          error-handler-definition: errorHandler
+#          producer:
+#            error-channel-enabled: true
+
+
+        errorHandler-out-0:
+          destination: streams-topic-error
+
+        error:
+          destination: streams-topic-error
+
+#      default:
+#        error-handler-definition: errorHandler
+
 
       kafka:
         binder:
           transaction:
             producer:
               use-native-encoding: true
+#              error-channel-enabled: true
+          headers:
+            - spanId
+            - spanTraceId
+            - spanSampled
+            - spanParentSpanId
+            - spanName
+            - spanFlags
+            - eventType
+            - Authorization
+
+
+#        streams:
+#          binder:
+#            deserialization-exception-handler: sendtodlq
 
 
 #        stringSupplier-out-0:
@@ -34,7 +67,6 @@ spring:
     function:
 #      definition: stringSupplier,stringConsumer
       definition: streamProcess
-
 
 
 
