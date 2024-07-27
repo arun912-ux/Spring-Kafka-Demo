@@ -7,11 +7,11 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication
-@EnableScheduling
+@Slf4j
 @EnableKafka
 @EnableAsync
-@Slf4j
+@EnableScheduling
+@SpringBootApplication
 public class SpringKafkaApplication {
 
     public static void main(String[] args) {
