@@ -23,7 +23,7 @@ public class ProducerService {
 
 
 //    @Scheduled(cron = "*/10 * * * * *")
-    @Scheduled(initialDelay = 3_000, fixedDelay = 30_000)
+//    @Scheduled(initialDelay = 3_000, fixedDelay = 30_000)
     public void sendMessageWithDelay() {
         String message = "\"" + faker.dune().quote() + "\"";
         log.info("sending message : {} \n", message);
