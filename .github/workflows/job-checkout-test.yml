@@ -1,0 +1,49 @@
+
+name: .workflow checkout and test
+
+on:
+  workflow_call:
+    inputs:
+      branch_name:
+        description: 'branch name to checkout'
+        required: true
+        type: string
+
+
+jobs:
+
+  checkout:
+
+    name: Gradle Build
+
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch_name }}
+
+      - name: Set up JDK 17
+        id: setup-java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Display Java version
+        id: display-java-version
+        run: |
+          java -version
+
+      - name: Test Gradle
+        id: test-gradle
+        run: |
+          echo "./gradlew clean test"
+          chmod +x ./gradlew
+          ./gradlew clean test
+
+
+
+

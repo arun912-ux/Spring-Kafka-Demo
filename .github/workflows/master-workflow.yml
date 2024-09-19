@@ -1,0 +1,41 @@
+
+name: Master Branch Workflow
+
+on:
+  push:
+    branches:
+     - master
+  pull_request:
+    branches:
+      - master
+
+
+jobs:
+
+  checkout-and-build:
+    name: Checkout and Build
+    uses: ./.github/workflows/job-checkout-build.yml
+    with:
+      branch_name: ${{ github.ref_name }}
+
+
+
+  checkout-and-test:
+    needs: checkout-and-build
+    uses: ./.github/workflows/job-checkout-test.yml
+    with:
+      branch_name: ${{ github.ref_name }}
+
+
+
+  checkout-and-docker-build:
+    needs: checkout-and-build
+    uses: ./.github/workflows/job-checkout-docker-build.yml
+    secrets: inherit
+    with:
+      registry_url: docker.registry.local:32000
+      branch_name: ${{ github.ref_name }}
+
+
+
+
