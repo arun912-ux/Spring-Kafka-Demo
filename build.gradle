@@ -1,53 +1,15 @@
-buildscript {
-    repositories {
-
-        ['http://192.168.122.157:8081/artifactory/jfrog-gradle-release',
-         'http://192.168.122.157:8081/artifactory/jfrog-gradle-dev',
-         'http://192.168.122.157:8081/artifactory/jfrog-gradle-dev-local'
-        ].forEach {
-            repo ->
-                maven {
-                    url repo
-                    allowInsecureProtocol = true
-                    credentials {
-                        username = "${artifactory_user}"
-                        password = "${artifactory_password}"
-                    }
-                }
-        }
-
-    }
-    dependencies {
-        //Check for the latest version here: http://plugins.gradle.org/plugin/com.jfrog.artifactory
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4+"
-    }
-}
-
-
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.3.1'
+    id 'org.springframework.boot' version '3.5.6'
     id 'io.spring.dependency-management' version '1.1.5'
+    id 'com.github.davidmc24.gradle.plugin.avro' version '1.9.1'
 }
 
 
 allprojects {
     apply plugin: 'maven-publish'
-    apply plugin: "com.jfrog.artifactory"
 }
 
-
-artifactory {
-    contextUrl = "${artifactory_contextUrl}"   //The base Artifactory URL if not overridden by the publisher/resolver
-    publish {
-        repository {
-            repoKey = 'jfrog-gradle-dev-local'
-            username = "${artifactory_user}"
-            password = "${artifactory_password}"
-            maven = true
-        }
-    }
-}
 
 
 group = 'com.example'
@@ -68,6 +30,15 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
+    
+    // Configure Avro source set
+    sourceSets {
+        main {
+            java {
+                srcDirs 'src/main/java', 'build/generated-main-avro-java'
+            }
+        }
+    }
 }
 
 configurations {
@@ -77,22 +48,11 @@ configurations {
 }
 
 repositories {
-    ['http://192.168.122.157:8081/artifactory/jfrog-gradle-release',
-     'http://192.168.122.157:8081/artifactory/jfrog-gradle-dev',
-     'http://192.168.122.157:8081/artifactory/jfrog-gradle-dev-local'
-    ].forEach {
-        repo ->
-            maven {
-                url uri(repo)
-                allowInsecureProtocol = true
-                setAllowInsecureProtocol(true)
-                credentials {
-                    username = "${artifactory_user}"
-                    password = "${artifactory_password}"
-                }
-            }
-    }
     mavenCentral()
+    // Add this for Confluent artifacts
+    maven {
+        url 'https://packages.confluent.io/maven'
+    }
 }
 
 ext {
@@ -100,12 +60,18 @@ ext {
 }
 
 dependencies {
+    // Spring Boot starters
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.apache.kafka:kafka-streams'
     implementation 'org.springframework.cloud:spring-cloud-stream'
     implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka'
     implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka-streams'
     implementation 'org.springframework.kafka:spring-kafka'
+    
+    // Avro dependencies
+    implementation 'org.apache.avro:avro:1.12.1'
+    implementation 'io.confluent:kafka-avro-serializer:8.0.0'
+    implementation 'io.confluent:kafka-schema-registry-client:8.0.0'
 
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -153,13 +119,13 @@ publishing {
         }
     }
     repositories {
-        maven {
-            credentials {
-                username = "${artifactory_user}"
-                password = "${artifactory_password}"
-            }
-            url = 'http://192.168.122.157:8081/artifactory/jfrog-gradle-dev-local'
-            allowInsecureProtocol = true
-        }
+//        maven {
+//            credentials {
+//                username = "${ARTIFACTORY_USER}"
+//                password = "${ARTIFACTORY_PASSWORD}"
+//            }
+//            url = 'http://192.168.122.157:8081/artifactory/jfrog-gradle-dev-local'
+//            allowInsecureProtocol = true
+//        }
     }
 }
