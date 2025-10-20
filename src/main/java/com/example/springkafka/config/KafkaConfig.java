@@ -1,66 +1,133 @@
-//package com.example.springkafka.config;
-//
-//import org.springframework.context.annotation.Bean;
-//import org.springframework.context.annotation.Configuration;
-//import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-//import org.springframework.kafka.core.KafkaTemplate;
-//import org.springframework.kafka.core.ProducerFactory;
-//
-//import java.util.HashMap;
-//import java.util.Map;
-//
-//import static org.apache.kafka.clients.producer.ProducerConfig.ACKS_CONFIG;
-//import static org.apache.kafka.clients.producer.ProducerConfig.BATCH_SIZE_CONFIG;
-//import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
-//import static org.apache.kafka.clients.producer.ProducerConfig.BUFFER_MEMORY_CONFIG;
-//import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
-//import static org.apache.kafka.clients.producer.ProducerConfig.LINGER_MS_CONFIG;
-//import static org.apache.kafka.clients.producer.ProducerConfig.RETRIES_CONFIG;
-//import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
-//
-//@Configuration
-//public class KafkaConfig {
-//
-//    @Bean
-//    public KafkaTemplate<String, String> kafkaTemplate() {
-//        return new KafkaTemplate<>(producerFactory());
-//    }
-//
-//    @Bean
-//    public ProducerFactory<String, String> producerFactory() {
-//        return new DefaultKafkaProducerFactory<>(getProducerConfig());
-//    }
-//
-//
-//    /**
-//     * Returns the producer configuration settings for Kafka.
-//     *
-//     * @return The producer configuration settings.
-//     */
-//    public Map<String, Object> getProducerConfig() {
-//        Map<String, Object> config = new HashMap<>();
-//        config.put(BOOTSTRAP_SERVERS_CONFIG, "192.168.1.71:9092");
-////        config.put(KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-////        config.put(VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-//        config.put(ACKS_CONFIG, "all");
-//        config.put(RETRIES_CONFIG, "1");
-//        config.put(KEY_SERIALIZER_CLASS_CONFIG, "io.confluent.kafka.serializers.KafkaAvroSerializer");
-//        config.put(VALUE_SERIALIZER_CLASS_CONFIG, "io.confluent.kafka.serializers.KafkaAvroSerializer");
-//        config.put(BATCH_SIZE_CONFIG, 16384);
-//        config.put(BUFFER_MEMORY_CONFIG, 33554432);
-//        config.put(LINGER_MS_CONFIG, 100);
-//        config.put("max.in.flight.messages", 1000000);
-//        config.put("max.request.size", 1048576);
-//        config.put("receive.buffer.bytes", 262144);
-//        config.put("send.buffer.bytes", 262144);
-//        config.put("timeout.ms", 30000);
-//        config.put("metadata.fetch.timeout.ms", 60000);
-//        config.put("reconnect.backoff.ms", 50);
-//        config.put("reconnect.backoff.max.ms", 1000);
-//        config.put("retry.backoff.ms", 100);
-//        config.put("retry.backoff.max.ms", 1000);
-//        config.put("partition.assignment.strategy", "org.apache.kafka.clients.consumer.CooperativeStickyAssignor");
-//        return config;
-//    }
-//
-//}
+package com.example.springkafka.config;
+
+import io.confluent.kafka.serializers.KafkaAvroDeserializer;
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.annotation.DltHandler;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.listener.CommonErrorHandler;
+import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
+import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.util.backoff.FixedBackOff;
+
+import javax.sql.rowset.serial.SerialException;
+import java.util.HashMap;
+import java.util.Map;
+
+@Slf4j
+@Configuration
+public class KafkaConfig {
+
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String bootstrapServers;
+
+    @Value("${spring.kafka.schema-registry-url:http://192.168.1.71:8081}")
+    private String schemaRegistryUrl;
+
+    @Value("${spring.kafka.consumer.group-id}")
+    private String groupId;
+
+    // Producer configuration for Avro
+    @Bean
+    public Map<String, Object> producerConfigs() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
+        props.put(ProducerConfig.PARTITIONER_ADPATIVE_PARTITIONING_ENABLE_CONFIG, true);
+        props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, org.apache.kafka.clients.producer.RoundRobinPartitioner.class);
+        props.put("schema.registry.url", schemaRegistryUrl);
+        return props;
+    }
+
+    // Consumer configuration for Avro
+    @Bean
+    public Map<String, Object> consumerConfigs() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
+//        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+//        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
+//        props.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
+//        props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, StringDeserializer.class);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        props.put("schema.registry.url", schemaRegistryUrl);
+        props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true);
+//        props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, CooperativeStickyAssignor.class.getName());
+        props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, org.apache.kafka.clients.consumer.RoundRobinAssignor.class.getName());
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+//        props.put(ConsumerConfig.ACK)
+        return props;
+    }
+
+    @Bean
+    public ProducerFactory<String, Object> producerFactory() {
+        return new DefaultKafkaProducerFactory<>(producerConfigs());
+    }
+
+    @Bean
+    public ConsumerFactory<String, Object> consumerFactory() {
+        return new DefaultKafkaConsumerFactory<>(
+                consumerConfigs(),
+                new StringDeserializer(),
+                new KafkaAvroDeserializer()
+        );
+    }
+
+    @Bean
+    public KafkaTemplate<String, Object> kafkaTemplate() {
+        return new KafkaTemplate<>(producerFactory());
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory());
+        log.info("Default ACK mode: {}", factory.getContainerProperties().getAckMode());
+        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+//        factory.setCommonErrorHandler(commonErrorHandler());
+        return factory;
+    }
+
+    @Bean
+    public CommonErrorHandler commonErrorHandler() {
+        // BackOff strategy: e.g., initial interval 1s, max attempts 3
+        FixedBackOff backOff = new FixedBackOff(10_000L, 2L);  // means 2 retries (3 attempts total)
+        return new DefaultErrorHandler(deadLetterRecoverer(), backOff);
+    }
+
+    @Bean
+    public DeadLetterPublishingRecoverer deadLetterRecoverer() {
+        DeadLetterPublishingRecoverer recoverer =
+                new DeadLetterPublishingRecoverer(kafkaTemplate(),
+                        (record, ex) -> new TopicPartition(record.topic() + ".DLT", record.partition()));
+        recoverer.addNotRetryableExceptions(SerialException.class);
+        return recoverer;
+    }
+
+    @DltHandler
+    public void handleDlt(ConsumerRecord<String, byte[]> record) {
+        // Process the failed message
+        log.error("Received message from DLT: {}", record);
+    }
+
+
+}

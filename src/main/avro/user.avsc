@@ -4,36 +4,12 @@
   "name": "UserEvent",
   "fields": [
     {
-      "name": "id",
-      "type": "string"
-    },
-    {
       "name": "name",
-      "type": "string"
-    },
-    {
-      "name": "email",
       "type": "string"
     },
     {
       "name": "timestamp",
       "type": "long"
-    },
-    {
-      "name": "userType",
-      "type": {
-        "type": "enum",
-        "name": "UserType",
-        "symbols": ["CUSTOMER", "ADMIN", "GUEST"]
-      }
-    },
-    {
-      "name": "metadata",
-      "type": {
-        "type": "map",
-        "values": "string"
-      },
-      "default": {}
     }
   ]
 }

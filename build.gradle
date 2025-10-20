@@ -6,12 +6,6 @@ plugins {
 }
 
 
-allprojects {
-    apply plugin: 'maven-publish'
-}
-
-
-
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
 
@@ -30,16 +24,18 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
-    
-    // Configure Avro source set
-    sourceSets {
-        main {
-            java {
-                srcDirs 'src/main/java', 'build/generated-main-avro-java'
-            }
+}
+
+compileJava.dependsOn generateAvroJava
+
+sourceSets {
+    main {
+        java {
+            srcDir 'build/generated-main-avro-java'
         }
     }
 }
+
 
 configurations {
     compileOnly {
@@ -55,19 +51,13 @@ repositories {
     }
 }
 
-ext {
-    set('springCloudVersion', "2023.0.2")
-}
 
 dependencies {
     // Spring Boot starters
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.apache.kafka:kafka-streams'
-    implementation 'org.springframework.cloud:spring-cloud-stream'
-    implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka'
-    implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka-streams'
     implementation 'org.springframework.kafka:spring-kafka'
-    
+    implementation 'org.springframework.boot:spring-boot-starter-integration'
+    implementation 'org.springframework.integration:spring-integration-kafka'
+
     // Avro dependencies
     implementation 'org.apache.avro:avro:1.12.1'
     implementation 'io.confluent:kafka-avro-serializer:8.0.0'
@@ -77,55 +67,19 @@ dependencies {
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'
 
+    testImplementation 'org.mockito:mockito-core:5.12.0'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.cloud:spring-cloud-stream-test-binder'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
+    testImplementation 'org.springframework.integration:spring-integration-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // faker
     implementation 'net.datafaker:datafaker:1.5.0'
 
-    testImplementation 'org.mockito:mockito-core:5.12.0'
 
-    // test artifactory
-//    implementation 'com.example:springkafka:0.0.1-SNAPSHOT'
-
-}
-
-dependencyManagement {
-    imports {
-        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-    }
 }
 
 tasks.named('test') {
     useJUnitPlatform()
 }
 
-
-publishing {
-    publications {
-        myMaven(MavenPublication) {
-            from components.java
-            groupId = group
-            artifactId = jar.archiveBaseName
-            version = "${version}"
-
-            pom {
-                name = 'My Kafka Library'
-                description = 'A description of my kafka library'
-
-            }
-        }
-    }
-    repositories {
-//        maven {
-//            credentials {
-//                username = "${ARTIFACTORY_USER}"
-//                password = "${ARTIFACTORY_PASSWORD}"
-//            }
-//            url = 'http://192.168.122.157:8081/artifactory/jfrog-gradle-dev-local'
-//            allowInsecureProtocol = true
-//        }
-    }
-}
