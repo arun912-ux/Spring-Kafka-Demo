@@ -28,8 +28,8 @@ include:
 set_env_variables:
   stage: pre_setup
   script:
-    - APP_NAME=$(./gradlew properties -q | grep "name:" | cut -d' ' -f)
-    - APP_VERSION=$(./gradlew properties -q | grep "version:" | cut -d' ' -f)
+    - APP_NAME=$(./gradlew properties -q | grep "name:" | cut -d' ' -f2)
+    - APP_VERSION=$(./gradlew properties -q | grep "version:" | cut -d' ' -f2)
 
     - echo "APP_NAME=$APP_NAME"
     - echo "APP_VERSION=$APP_VERSION"
