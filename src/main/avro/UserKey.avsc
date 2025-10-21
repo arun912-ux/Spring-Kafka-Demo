@@ -1,0 +1,9 @@
+{
+  "namespace": "com.example.springkafka.avro",
+  "type": "record",
+  "name": "UserKey",
+  "fields": [
+    { "name": "userId",        "type": "string" },
+    { "name": "region",        "type": "string" }
+  ]
+}

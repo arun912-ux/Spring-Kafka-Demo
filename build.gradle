@@ -5,9 +5,8 @@ plugins {
     id 'com.github.davidmc24.gradle.plugin.avro' version '1.9.1'
 }
 
-
 group = 'com.example'
-version = '0.0.1-SNAPSHOT'
+version = '0.0.1'
 
 // Configure the fat JAR (default behavior of Spring Boot)
 bootJar {

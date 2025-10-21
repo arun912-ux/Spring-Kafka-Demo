@@ -1,0 +1,253 @@
+image: eclipse-temurin:17-jdk-alpine
+
+stages:
+  - pre_setup
+  - build
+  - test
+  - docker_build_push
+  - helm_kube_deploy
+
+variables:
+  DOCKERHUB_USERNAME: arun912
+  APP_NAME: ""
+  IMAGE_TAG: ""
+  DOCKER_REGISTRY: "docker.io"
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""  # disables TLS; required for DinD on port 2375
+  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+  GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+
+include:
+#  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+#  - template: Security/Secret-Detection.gitlab-ci.yml
+  - template: Security/Container-Scanning.gitlab-ci.yml
+#  - template: Code-Quality.gitlab-ci.yml
+
+
+set_env_variables:
+  stage: pre_setup
+  script:
+    - APP_NAME=$(./gradlew properties -q | grep "name:" | cut -d' ' -f)
+    - APP_VERSION=$(./gradlew properties -q | grep "version:" | cut -d' ' -f)
+
+    - echo "APP_NAME=$APP_NAME"
+    - echo "APP_VERSION=$APP_VERSION"
+
+    - echo "APP_NAME=$APP_NAME" >> variables.env
+    - echo "APP_VERSION=$APP_VERSION" >> variables.env
+
+  artifacts:
+    reports:
+      dotenv: variables.env
+
+
+
+build:
+  needs: [set_env_variables]
+  stage: build
+  script:
+    - echo "APP_NAME:IMAGE_TAG=$APP_NAME:$IMAGE_TAG"
+
+    - ./gradlew clean build -x test
+  artifacts:
+    paths:
+      - ./build
+
+
+
+
+
+test:
+  needs: [set_env_variables]
+  stage: test
+  script:
+    - echo "APP_NAME:IMAGE_TAG=$APP_NAME:$IMAGE_TAG"
+
+    - ./gradlew clean test
+#  artifacts:
+#    reports:
+#      junit: unit-test-results.xml
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_TAG' # Check if it's master or a tag
+      allow_failure: false              # Allow this job to fail without failing the pipeline if it's not on master or a tag
+
+
+
+sonar:
+  needs: [set_env_variables]
+  stage: test
+  image:
+    name: sonarsource/sonar-scanner-cli:11
+    entrypoint: [""]
+  cache:
+    policy: pull-push
+    key: "sonar-cache-$CI_COMMIT_REF_SLUG"
+    paths:
+      - "${SONAR_USER_HOME}/cache"
+      - sonar-scanner/
+
+  script:
+    - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}"
+  allow_failure: true
+  # rules:
+  #   - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  #   - if: $CI_COMMIT_BRANCH == 'master'
+  #   - if: $CI_COMMIT_BRANCH == 'develop'
+
+
+
+
+
+docker_image_tag:
+  needs: [build, set_env_variables]
+  stage: docker_build_push
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - echo "CI_ENVIRONMENT_FILE=$CI_ENVIRONMENT_FILE" # Load environment variables
+    # get the tag name or branch commit sha
+    - |
+      #! /bin/bash
+      if [ -z "$CI_COMMIT_TAG" ]; then
+        export IMAGE_TAG="$(echo ${CI_COMMIT_SHA} | cut -c1-7)"
+      else
+        export IMAGE_TAG=$CI_COMMIT_TAG
+      fi
+
+    - echo "IMAGE_TAG=$IMAGE_TAG"
+
+    - echo "IMAGE_TAG=$IMAGE_TAG" >> variables.env
+    - echo "APP_NAME=$APP_NAME" >> variables.env
+
+    - echo "APP_NAME:IMAGE_TAG=$APP_NAME:$IMAGE_TAG"
+
+  artifacts:
+    reports:
+      dotenv: variables.env
+
+
+
+docker_image_build_push:
+  needs: [build, docker_image_tag, set_env_variables]
+  stage: docker_build_push
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - |
+      #! /bin/bash
+      docker info || echo "docker info failed"
+      echo "Login into $DOCKER_REGISTRY registry..."
+      docker logout || echo "docker logout failed"
+      mkdir -p ~/.docker
+      echo '{"auths":{"https://index.docker.io/v1/":{"auth":"'$DOCKERHUB_AUTH'"}}}' > ~/.docker/config.json
+      docker login || echo "docker login failed"
+
+  script:
+    - echo "DOCKERHUB_USERNAME/APP_NAME:IMAGE_TAG=$DOCKERHUB_USERNAME/$APP_NAME:$IMAGE_TAG"
+    - docker build . -t $DOCKERHUB_USERNAME/$APP_NAME:$IMAGE_TAG
+    - echo "docker build is completed..!! $DOCKERHUB_USERNAME/$APP_NAME:$IMAGE_TAG"
+
+    - docker image ls
+
+    - echo "Pushing to docker registry..."
+    - docker push $DOCKERHUB_USERNAME/$APP_NAME:$IMAGE_TAG
+    - echo DOCKER_IMAGE_FULL_NAME=$DOCKERHUB_USERNAME/$APP_NAME:$IMAGE_TAG >> variables.env
+
+  artifacts:
+    reports:
+      dotenv: variables.env
+
+
+
+
+
+
+
+
+# .setup_tailscale: &setup_tailscale
+#   - echo "Stetting up Tailscale..."
+#   - apt-get update && apt-get install -y curl wget iputils-ping iproute2 dnsutils ca-certificates openssh-client
+#   - curl -fsSL https://tailscale.com/install.sh | sh
+#   - echo "Installed Tailscale..."
+#   - STATE_ARGS=" --state=mem:"
+#   - tailscaled ${STATE_ARGS} ${ADDITIONAL_DAEMON_ARGS} 2> ~/tailscaled.log &
+#   - sleep 15
+#   - tailscale status --json
+#   - tailscale up --authkey=${TAILSCALE_AUTH} --hostname=${HOSTNAME} --accept-routes
+#   - |
+#     tailscale ip
+#     tailscale status
+#   - echo "Pinging the Kube cluster..."
+#   - ping 100.74.97.11 -c3 -W10
+
+
+# .setup_helm_and_kubectl: &setup_helm_and_kubectl
+#   - echo "Setting up helm and kubectl..."
+#   - curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+#   - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+#   - chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl
+
+
+
+helm_lint_template:
+  stage: helm_kube_deploy
+  needs: [docker_image_build_push, docker_image_tag, set_env_variables]
+  image: alpine/k8s:1.32.5
+
+  script:
+    - helm lint ./helm
+    - helm template ./helm --set image.tag=$IMAGE_TAG
+
+helm_kube_deploy:
+  stage: helm_kube_deploy
+  needs: [docker_image_build_push, helm_lint_template, docker_image_tag, set_env_variables]
+  image: alpine/k8s:1.32.5
+  before_script:
+    - |
+      #! /bin/bash
+      mkdir -p ~/.kube && touch ~/.kube/config
+      echo "${KUBE_CONFIG}" | base64 -d > ~/.kube/config
+      chmod 600 ~/.kube/config
+      kubectl get all --all-namespaces
+  script: |
+    echo "helm upgrade --install $APP_NAME-$CI_COMMIT_REF_NAME --namespace $APP_NAME --create-namespace ./helm --set image.tag=$IMAGE_TAG --wait --timeout 300s --atomic" 
+    helm upgrade --install "${APP_NAME}-${CI_COMMIT_REF_NAME}" --namespace $APP_NAME --create-namespace ./helm --set image.tag=$IMAGE_TAG  --wait --timeout 300s --atomic 
+    echo "# Optional: Confirm rollout is healthy (extra guard) : kubectl rollout status deployment -n $APP_NAME --timeout=300s"
+    kubectl rollout status deployment -n $APP_NAME --timeout=300s 
+
+helm_kube_uninstall:
+  stage: helm_kube_deploy
+  needs: [docker_image_build_push, set_env_variables]
+  image: alpine/k8s:1.32.5
+  before_script:
+    - |
+      #! /bin/bash
+      mkdir -p ~/.kube && touch ~/.kube/config
+      echo "${KUBE_CONFIG}" | base64 -d > ~/.kube/config
+      chmod 600 ~/.kube/config
+      kubectl get all -A
+  script: |
+    echo "helm uninstall $APP_NAME-$CI_COMMIT_REF_NAME --namespace $APP_NAME" 
+    helm uninstall "${APP_NAME}-${CI_COMMIT_REF_NAME}" --namespace $APP_NAME
+  when: manual
+  allow_failure: true
+
+# helm_kube_deploy:
+#   stage: helm_kube_deploy
+#   needs: [docker_image_build_push, helm_lint_template, docker_image_tag, set_env_variables]
+#   image: ubuntu:24.04
+#   before_script:
+#     - *setup_tailscale
+#     - *setup_helm_and_kubectl
+#     - |
+#       #! /bin/bash
+#       mkdir -p ~/.kube && touch ~/.kube/config
+#       echo "${KUBE_CONFIG}" | base64 --decode > ~/.kube/config
+#       chmod 600 ~/.kube/config
+#       kubectl get all --all-namespaces
+#   script: |
+#     echo "helm upgrade --install $APP_NAME-$CI_COMMIT_REF_NAME ./helm --set image.tag=$IMAGE_TAG"
+#     helm upgrade --install "${APP_NAME}-${CI_COMMIT_REF_NAME}" ./helm --set image.tag=$IMAGE_TAG

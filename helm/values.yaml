@@ -1,0 +1,34 @@
+
+name: spring-kafka-app
+namespace: spring-kafka-app
+replicaCount: 3
+
+deployment:
+  name: spring-kafka-app-deployment
+
+image:
+  registry: docker.io
+# repo should be passed during CI
+  repository: SpringKafka
+  owner: arun912
+# tag should be passed during CI
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  name: spring-kafka-app-service
+  type: ClusterIP
+  port: 80
+
+ingress:
+  name: spring-kafka-app-ingress
+  enabled: true
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  host: "kafka.kube.lan"
+  hosts:
+      paths:
+        - /
+  tls: []
+
+
