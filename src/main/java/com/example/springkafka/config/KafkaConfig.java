@@ -64,8 +64,8 @@ public class KafkaConfig {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
         props.put("schema.registry.url", schemaRegistryUrl);
         props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true);
-//        props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, org.apache.kafka.clients.consumer.CooperativeStickyAssignor.class.getName());
-        props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, org.apache.kafka.clients.consumer.RoundRobinAssignor.class.getName());
+        props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, org.apache.kafka.clients.consumer.CooperativeStickyAssignor.class.getName());
+//        props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, org.apache.kafka.clients.consumer.RoundRobinAssignor.class.getName());
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
         return props;

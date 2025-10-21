@@ -5,6 +5,7 @@ import com.example.springkafka.avro.UserKey;
 import lombok.extern.slf4j.Slf4j;
 import net.datafaker.Faker;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,8 @@ public class ProducerService {
     private static final String OUTPUT_TOPIC = "demo-topic-1";
     private final Faker faker;
     private long i = 0;
+    @Value("${kafka.producer.enabled:true}")
+    private boolean producerEnabled;
 
 
     public ProducerService(KafkaTemplate<Object, Object> kafkaTemplate) {
@@ -30,7 +33,7 @@ public class ProducerService {
     //    @Scheduled(cron = "*/10 * * * * *")
     @Scheduled(initialDelay = 10_000, fixedDelay = 30_000*2)
     public void loop() {
-        while (i++ < 1_000L) {
+        while (i++ < 1_000_000L && producerEnabled) {
             sendMessageWithDelay();
         }
         i = 0;
@@ -47,7 +50,7 @@ public class ProducerService {
 //        kafkaTemplate.send(OUTPUT_TOPIC, "key-" + i, message);
 
         UserEvent message = UserEvent.newBuilder()
-                .setUserId(faker.idNumber().valid())
+                .setUserId(faker.idNumber().singaporeanUin())
                 .setEventType(faker.esports().event())
                 .setEventTime(faker.random().nextLong(1_000_000L))
                 .setMetadata(new HashMap<>())
