@@ -48,7 +48,6 @@ build:
   stage: build
   script:
     - echo "APP_NAME:IMAGE_TAG=$APP_NAME:$IMAGE_TAG"
-
     - ./gradlew clean build -x test
   artifacts:
     paths:

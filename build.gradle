@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'jacoco'
     id 'org.springframework.boot' version '3.5.7'
     id 'io.spring.dependency-management' version '1.1.5'
     id 'com.github.davidmc24.gradle.plugin.avro' version '1.9.1'
@@ -44,9 +45,8 @@ configurations {
 
 repositories {
     mavenCentral()
-    // Add this for Confluent artifacts
     maven {
-        url 'https://packages.confluent.io/maven'
+        url 'https://packages.confluent.io/maven'   // Add this for Confluent artifacts
     }
 }
 
@@ -82,3 +82,38 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
+def jacocoExcludes = [
+        '**/dto/**',
+        'com/example/springkafka/config/*',
+        '**/exception/**',
+        '**/*Config*',
+]
+
+tasks.test {
+    finalizedBy jacocoTestReport  // ensure report after test
+}
+
+jacocoTestReport {
+    reports {
+        html.required = true
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir("reports/jacoco/html")
+    }
+    dependsOn test
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.50
+            }
+            excludes = jacocoExcludes
+        }
+    }
+    dependsOn jacocoTestReport
+    shouldRunAfter jacocoTestReport
+}
+
+check.dependsOn jacocoTestCoverageVerification
