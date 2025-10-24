@@ -9,7 +9,7 @@ deployment:
 image:
   registry: docker.io
 # repo should be passed during CI
-  repository: SpringKafka
+  repository: spring-kafka
   owner: arun912
 # tag should be passed during CI
   tag: latest

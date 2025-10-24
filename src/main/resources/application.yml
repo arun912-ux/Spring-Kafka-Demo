@@ -36,6 +36,6 @@ logging:
 
 kafka:
   producer:
-    enabled: true
+    enabled: false
 
 
