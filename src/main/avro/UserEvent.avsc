@@ -1,0 +1,11 @@
+{
+  "namespace": "com.example.springkafka.avro",
+  "type": "record",
+  "name": "UserEvent",
+  "fields": [
+    { "name": "userId",        "type": "string" },
+    { "name": "eventType",     "type": "string" },
+    { "name": "eventTime",     "type": "long" },
+    { "name": "metadata",      "type": ["null", { "type": "map", "values": "string" } ], "default": null }
+  ]
+}

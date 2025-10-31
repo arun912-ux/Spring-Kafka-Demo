@@ -1,50 +1,72 @@
 package com.example.springkafka.config;
 
-import org.apache.kafka.common.serialization.StringSerializer;
+import com.example.springkafka.avro.UserEvent;
+import com.example.springkafka.avro.UserKey;
+import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
+import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.streams.StreamsConfig;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.annotation.KafkaStreamsDefaultConfiguration;
+import org.springframework.kafka.config.KafkaStreamsConfiguration;
+import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.apache.kafka.clients.producer.ProducerConfig.ACKS_CONFIG;
-import static org.apache.kafka.clients.producer.ProducerConfig.BATCH_SIZE_CONFIG;
-import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
-import static org.apache.kafka.clients.producer.ProducerConfig.BUFFER_MEMORY_CONFIG;
-import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
-import static org.apache.kafka.clients.producer.ProducerConfig.LINGER_MS_CONFIG;
-import static org.apache.kafka.clients.producer.ProducerConfig.RETRIES_CONFIG;
-import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
-
 @Configuration
 public class KafkaConfig {
 
-//    @Bean
-//    public KafkaTemplate<String, String> kafkaTemplate() {
-//        return new KafkaTemplate<>(producerFactory());
-//    }
-//
-//    @Bean
-//    public ProducerFactory<String, String> producerFactory() {
-//        return new DefaultKafkaProducerFactory<>(getProducerConfig());
-//    }
-//
-//
-//    /**
-//     * Returns the producer configuration settings for Kafka.
-//     *
-//     * @return The producer configuration settings.
-//     */
-//    public Map<String, Object> getProducerConfig() {
-//        Map<String, Object> config = new HashMap<>();
-//        config.put(BOOTSTRAP_SERVERS_CONFIG, "192.168.122.157:9092");
-//        config.put(KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-//        config.put(VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-//
-//        return config;
-//    }
+
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String bootstrapServers;
+
+    @Value("${spring.kafka.streams.application-id}")
+    private String applicationId;
+
+    @Value("${spring.kafka.streams.properties.schema.registry.url}")
+    private String schemaRegistryUrl;
+
+    @Bean(KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME)
+    public KafkaStreamsConfiguration kStreamsConfig() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
+        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        // Set default serdes if you like
+        props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, SpecificAvroSerde.class.getName());
+        props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, SpecificAvroSerde.class.getName());
+        // Schema Registry config
+        props.put("schema.registry.url", schemaRegistryUrl);
+        // For specific Avro reader:
+        props.put("specific.avro.reader", true);
+
+        return new KafkaStreamsConfiguration(props);
+    }
+
+    @Bean
+    public Serde<UserKey> userKeySerde() {
+        SpecificAvroSerde<UserKey> serde = new SpecificAvroSerde<>();
+        Map<String, String> serdeConfig = Map.of(
+                "schema.registry.url", schemaRegistryUrl
+        );
+        serde.configure(serdeConfig, false);
+        return serde;
+    }
+    @Bean
+    public Serde<UserEvent> userEventSerde() {
+        SpecificAvroSerde<UserEvent> serde = new SpecificAvroSerde<>();
+        Map<String, String> serdeConfig = Map.of(
+                "schema.registry.url", schemaRegistryUrl
+        );
+        serde.configure(serdeConfig, false);
+        return serde;
+    }
+
+    @Bean
+    public StreamsBuilderFactoryBean streamsBuilderFactoryBean(KafkaStreamsConfiguration kStreamsConfig) {
+        return new StreamsBuilderFactoryBean(kStreamsConfig());
+    }
+
 
 }

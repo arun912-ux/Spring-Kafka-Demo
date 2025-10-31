@@ -1,17 +1,40 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.3.1'
+    id 'org.springframework.boot' version '3.5.7'
     id 'io.spring.dependency-management' version '1.1.5'
+    id 'com.github.davidmc24.gradle.plugin.avro' version '1.9.1'
 }
 
 group = 'com.example'
-version = '0.0.1-SNAPSHOT'
+version = '0.0.1'
+
+// Configure the fat JAR (default behavior of Spring Boot)
+bootJar {
+    archiveFileName = "${project.group}-${project.name}-${project.version}.jar"
+}
+
+// Ensure the plain JAR is not created
+tasks.named('jar') {
+    enabled = false
+}
+
 
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
 }
+
+compileJava.dependsOn generateAvroJava
+
+sourceSets {
+    main {
+        java {
+            srcDir 'build/generated-main-avro-java'
+        }
+    }
+}
+
 
 configurations {
     compileOnly {
@@ -21,6 +44,9 @@ configurations {
 
 repositories {
     mavenCentral()
+    maven {
+        url 'https://packages.confluent.io/maven'   // Add this for Confluent artifacts
+    }
 }
 
 ext {
@@ -30,24 +56,23 @@ ext {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.apache.kafka:kafka-streams'
-    implementation 'org.springframework.cloud:spring-cloud-stream'
-    implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka'
-    implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka-streams'
     implementation 'org.springframework.kafka:spring-kafka'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
 
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.cloud:spring-cloud-stream-test-binder'
-    testImplementation 'org.springframework.kafka:spring-kafka-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // faker
     implementation 'net.datafaker:datafaker:1.5.0'
 
     testImplementation 'org.mockito:mockito-core:5.12.0'
+
+    implementation("io.confluent:kafka-avro-serializer:8.1.0")
+    implementation("io.confluent:kafka-streams-avro-serde:8.1.0")
 
 }
 
