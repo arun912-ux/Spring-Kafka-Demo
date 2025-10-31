@@ -4,14 +4,14 @@ spring:
 
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: 192.168.1.71:9092
     streams:
       application-id: my-streams-app
       # default serdes:
       properties:
         default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
         default.value.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-        schema.registry.url: http://192.168.1.72:8081
+        schema.registry.url: http://192.168.1.71:8081
 
 
 

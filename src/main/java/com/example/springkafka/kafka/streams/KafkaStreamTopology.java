@@ -11,6 +11,8 @@ import org.apache.kafka.streams.kstream.Produced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
+
 @Slf4j
 @Component
 public class KafkaStreamTopology {
@@ -34,7 +36,8 @@ public class KafkaStreamTopology {
         KStream<UserKey, UserEvent> processed = stream.mapValues((userKey, userEvent) ->
                 {
                     log.info("Processing userKey: {} & userEvent: {}", userKey, userEvent);
-                    return UserEvent.newBuilder().build();
+                    return UserEvent.newBuilder()
+                            .setUserId("id").setEventType("Type").setEventTime(1000000L).setMetadata(new HashMap<>()).build();
                 }
         );
 

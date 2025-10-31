@@ -50,7 +50,7 @@ public class KafkaConfig {
         Map<String, String> serdeConfig = Map.of(
                 "schema.registry.url", schemaRegistryUrl
         );
-        serde.configure(serdeConfig, false);
+        serde.configure(serdeConfig, true);
         return serde;
     }
     @Bean
