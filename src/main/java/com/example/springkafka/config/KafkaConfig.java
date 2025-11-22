@@ -74,7 +74,11 @@ public class KafkaConfig {
 
     @Bean
     public ProducerFactory<Object, Object> producerFactory() {
-        return new DefaultKafkaProducerFactory<>(producerConfigs());
+        return new DefaultKafkaProducerFactory<>(
+                producerConfigs(),
+                new KafkaAvroSerializer(),
+                new KafkaAvroSerializer()
+        );
     }
 
     @Bean
