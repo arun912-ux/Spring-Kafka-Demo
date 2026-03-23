@@ -1,34 +1,26 @@
+
+
 spring:
-  application:
-    name: SpringKafka
-
-
   #  # spring kafka config
   kafka:
-    bootstrap-servers: kafka.broker.local:9092,192.168.1.71:9092
-    #    producer:
-    #      acks: all
-    #
-    #      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-    #      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-    #      client-id: spring-kafka-producer-client
+    bootstrap-servers: kafka-aiven-68f0cd7-duoley-9bac.i.aivencloud.com:24982
+    producer:
+      acks: all
+      client-id: spring-kafka-producer-group-1
+      security:
+        protocol: SSL
+
 
     consumer:
-      #      client-id: spring-kafka-consumer-client
-      #      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      #      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       group-id: spring-kafka-consumer-group-1
 
     listener:
       log-container-config: true
 
+    schema-registry-url: 'https://kafka-aiven-68f0cd7-duoley-9bac.i.aivencloud.com:24985'
 
-
-server:
-  servlet:
-    context-path: /v1/kafka
-
-
+    security:
+      protocol: SSL
 
 logging:
 #  level:

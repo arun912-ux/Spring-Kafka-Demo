@@ -1,22 +1,19 @@
 plugins {
     id 'java'
     id 'jacoco'
-    id 'org.springframework.boot' version '3.5.7'
-    id 'io.spring.dependency-management' version '1.1.5'
+    id 'org.springframework.boot' version '4.0.4'
+    id 'io.spring.dependency-management' version '1.1.7'
     id 'com.github.davidmc24.gradle.plugin.avro' version '1.9.1'
 }
 
 group = 'com.example'
-version = '0.0.1'
+version = '0.1.0'
 
 // Configure the fat JAR (default behavior of Spring Boot)
+jar.enabled = false
 bootJar {
-    archiveFileName = "${project.group}-${project.name}-${project.version}.jar"
-}
-
-// Ensure the plain JAR is not created
-tasks.named('jar') {
-    enabled = false
+    archiveBaseName = "${project.name}"
+    archiveVersion = "${project.version}"
 }
 
 
@@ -53,27 +50,25 @@ repositories {
 
 dependencies {
     // Spring Boot starters
-    implementation 'org.springframework.kafka:spring-kafka'
-    implementation 'org.springframework.boot:spring-boot-starter-integration'
-    implementation 'org.springframework.integration:spring-integration-kafka'
+    implementation 'org.springframework.boot:spring-boot-starter-kafka'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
 
     // Avro dependencies
     implementation 'org.apache.avro:avro:1.12.1'
-    implementation 'io.confluent:kafka-avro-serializer:8.0.0'
-    implementation 'io.confluent:kafka-schema-registry-client:8.0.0'
+    implementation 'io.confluent:kafka-avro-serializer:8.2.0'
+    implementation 'io.confluent:kafka-schema-registry-client:8.2.0'
 
     compileOnly 'org.projectlombok:lombok'
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'
 
-    testImplementation 'org.mockito:mockito-core:5.12.0'
+    testImplementation 'org.mockito:mockito-core:5.23.0'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
     testImplementation 'org.springframework.integration:spring-integration-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // faker
-    implementation 'net.datafaker:datafaker:1.5.0'
+    implementation 'net.datafaker:datafaker:2.5.4'
 
 
 }

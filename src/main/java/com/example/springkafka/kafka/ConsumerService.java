@@ -15,12 +15,13 @@ public class ConsumerService {
 
 
     private static final String INPUT_TOPIC = "demo-topic-1";
-    private final ObjectMapper mapper = new ObjectMapper();
+
+    private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+
     @Value("${kafka.producer.enabled:true}")
     private boolean producerEnabled;
 
     public ConsumerService() {
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
     }
 
 
@@ -34,7 +35,8 @@ public class ConsumerService {
 //            dltStrategy = DltStrategy.FAIL_ON_ERROR
 //    )
 //    @KafkaListener(topics = {"test-topic", INPUT_TOPIC}, groupId = "spring-kafka-consumer-group-id")
-    @KafkaListener(topics = {INPUT_TOPIC}, groupId = "arbitrary-group-id")
+//    @KafkaListener(topics = {INPUT_TOPIC}, groupId = "arbitrary-group-id")
+    @KafkaListener(topics = {INPUT_TOPIC})
     public void consumeMessageWithHeaders(ConsumerRecord<Object, Object> consumerRecord) {
         if (!producerEnabled) {
             log.info("received message : {} \nwith headers : {} \nand key : {} - hashcode : {}\npartition : {}\n",
