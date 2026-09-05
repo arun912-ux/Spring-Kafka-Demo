@@ -19,7 +19,7 @@ spring:
     listener:
       log-container-config: true
 
-    schema-registry-url: https://avnadmin:AVNS_KbJeWmeY7u9cOVw0aRK@kafka-germany-aiven-forgecomet-6211.d.aivencloud.com:13235
+    schema-registry-url: https://kafka-germany-aiven-forgecomet-6211.d.aivencloud.com:13235
 
     security:
       protocol: SSL
