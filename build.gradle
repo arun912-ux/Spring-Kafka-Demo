@@ -1,7 +1,7 @@
 plugins {
     id 'java'
     id 'jacoco'
-    id 'org.springframework.boot' version '4.0.4'
+    id 'org.springframework.boot' version '4.0.7'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.github.davidmc24.gradle.plugin.avro' version '1.9.1'
 }
@@ -73,6 +73,7 @@ dependencies {
 
 }
 
+
 tasks.named('test') {
     useJUnitPlatform()
 }
@@ -112,3 +113,46 @@ jacocoTestCoverageVerification {
 }
 
 check.dependsOn jacocoTestCoverageVerification
+
+
+
+
+
+// integration tests
+sourceSets {
+    integrationTest {
+        java {
+            srcDir 'src/integrationTest/java'
+        }
+        resources {
+            srcDir 'src/integrationTest/resources'
+        }
+        compileClasspath += main.output + test.output
+        runtimeClasspath += main.output + test.output
+    }
+}
+
+// Let integrationTest configuration extend from testImplementation / testRuntimeOnly
+configurations {
+    integrationTestImplementation.extendsFrom(testImplementation)
+    integrationTestRuntimeOnly.extendsFrom(testRuntimeOnly)
+}
+
+tasks.register('integrationTest', Test) {
+    description = 'Runs integration tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+
+    testLogging {
+        events "failed"     //  "passed", "skipped"
+    }
+    // you may want integration tests to run after unit tests
+    shouldRunAfter test
+
+    // use JUnit 5
+    useJUnitPlatform()
+}
+
+check.dependsOn integrationTest

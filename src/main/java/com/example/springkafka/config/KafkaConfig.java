@@ -81,8 +81,8 @@ public class KafkaConfig {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
         props.put("schema.registry.url", schemaRegistryUrl);
         props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true);
-        props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, org.apache.kafka.clients.consumer.StickyAssignor.class.getName());
-//        props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, org.apache.kafka.clients.consumer.CooperativeStickyAssignor.class.getName());
+//        props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, org.apache.kafka.clients.consumer.StickyAssignor.class.getName());
+        props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, org.apache.kafka.clients.consumer.CooperativeStickyAssignor.class.getName());
 //        props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, org.apache.kafka.clients.consumer.RoundRobinAssignor.class.getName());
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
@@ -136,19 +136,19 @@ public class KafkaConfig {
         ConcurrentKafkaListenerContainerFactory<Object, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
         log.info("Default ACK mode: {}", factory.getContainerProperties().getAckMode());
-        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+//        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
 //        factory.setCommonErrorHandler(commonErrorHandler());
         return factory;
     }
 
-    @Bean
+//    @Bean
     public CommonErrorHandler commonErrorHandler() {
         // BackOff strategy: e.g., initial interval 1s, max attempts 3
         FixedBackOff backOff = new FixedBackOff(10_000L, 2L);  // means 2 retries (3 attempts total)
         return new DefaultErrorHandler(deadLetterRecoverer(), backOff);
     }
 
-    @Bean
+//    @Bean
     public DeadLetterPublishingRecoverer deadLetterRecoverer() {
         DeadLetterPublishingRecoverer recoverer =
                 new DeadLetterPublishingRecoverer(kafkaTemplate(),
@@ -157,9 +157,9 @@ public class KafkaConfig {
         return recoverer;
     }
 
-    @DltHandler
+//    @DltHandler
     public void handleDlt(ConsumerRecord<Object, byte[]> record) {
-        // Process the failed message
+//         Process the failed message
         log.error("Received message from DLT: {}", record);
     }
 

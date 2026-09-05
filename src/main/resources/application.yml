@@ -3,24 +3,31 @@
 spring:
   #  # spring kafka config
   kafka:
-    bootstrap-servers: kafka-aiven-68f0cd7-duoley-9bac.i.aivencloud.com:24982
+    bootstrap-servers: kafka-germany-aiven-forgecomet-6211.d.aivencloud.com:13243
     producer:
       acks: all
       client-id: spring-kafka-producer-group-1
       security:
-        protocol: SSL
-
+        protocol: SASL
+      bootstrap-servers: kafka-germany-aiven-forgecomet-6211.d.aivencloud.com:13243
 
     consumer:
       group-id: spring-kafka-consumer-group-1
-
+      bootstrap-servers: kafka-germany-aiven-forgecomet-6211.d.aivencloud.com:13243
+      security:
+        protocol: SSL
     listener:
       log-container-config: true
 
-    schema-registry-url: 'https://kafka-aiven-68f0cd7-duoley-9bac.i.aivencloud.com:24985'
+    schema-registry-url: https://avnadmin:AVNS_KbJeWmeY7u9cOVw0aRK@kafka-germany-aiven-forgecomet-6211.d.aivencloud.com:13235
 
     security:
       protocol: SSL
+
+    streams:
+      bootstrap-servers: kafka-germany-aiven-forgecomet-6211.d.aivencloud.com:13243
+      security:
+        protocol: SSL
 
 logging:
 #  level:
@@ -29,5 +36,3 @@ logging:
 kafka:
   producer:
     enabled: false
-
-
