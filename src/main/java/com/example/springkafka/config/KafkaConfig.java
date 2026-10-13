@@ -14,7 +14,6 @@ import org.apache.kafka.common.config.SslConfigs;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -22,7 +21,6 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.CommonErrorHandler;
-import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
@@ -163,5 +161,17 @@ public class KafkaConfig {
         log.error("Received message from DLT: {}", record);
     }
 
+
+//    @Bean
+//    public RetryTopicConfiguration retryTopicConfiguration(KafkaTemplate<Object, Object> kafkaTemplate) {
+//        return RetryTopicConfigurationBuilder
+//                .newInstance()
+//                .exponentialBackoff(10_000L, 2.0, 60_000L) // Initial delay: 10s, Multiplier: 2, Max delay: 60s
+//                .maxAttempts(3) // Total attempts: 3 (1 initial + 2 retries)
+//                .retryOn(Exception.class) // Retry on all exceptions
+//                .doNotAutoCreateRetryTopics()
+//                .dltHandlerMethod(new EndpointHandlerMethod(ConsumerService.class, "handleDlt")) // Specify the DLT handler method
+//                .create(kafkaTemplate);
+//    }
 
 }

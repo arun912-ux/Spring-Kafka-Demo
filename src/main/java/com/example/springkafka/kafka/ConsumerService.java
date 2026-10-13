@@ -37,10 +37,12 @@ public class ConsumerService {
                     delay = 10_000,
                     multiplier = 2
             ),
-            dltTopicSuffix = ".dlt",
+            autoCreateTopics = "false",
+//            dltTopicSuffix = ".dlt",
             dltStrategy = DltStrategy.FAIL_ON_ERROR
     )
-//    @KafkaListener(topics = {"test-topic", INPUT_TOPIC}, groupId = "spring-kafka-consumer-group-id")
+
+    //    @KafkaListener(topics = {"test-topic", INPUT_TOPIC}, groupId = "spring-kafka-consumer-group-id")
 //    @KafkaListener(topics = {INPUT_TOPIC}, groupId = "arbitrary-group-id")
     @KafkaListener(topics = {INPUT_TOPIC})
     public void consumeMessageWithHeaders(ConsumerRecord<Object, Object> consumerRecord) {
@@ -66,6 +68,10 @@ public class ConsumerService {
         log.error("Error Cause     : {}", exceptionClass);
         log.error("Error Message   : {}", errorMessage);
         log.error("=================================================");
+
+        // send the message to DLT topic here
+        // kafkaTemplate.send(dltTopic, message);
+
     }
 
 }
